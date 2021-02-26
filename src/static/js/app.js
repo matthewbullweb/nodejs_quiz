@@ -146,13 +146,16 @@ function AddItemForm({ onNewItem }) {
 }
 
 function ItemDisplay({ Item, Role, onItemUpdate, onItemRemoval }) {
-    const { Container, Row, Col, Button } = ReactBootstrap;
+    const { Container, Row, Col, Button, Form } = ReactBootstrap;
+
+    var [changedItem, setChangedItem] = React.useState(Item.name);
 
     const toggleCompletion = () => {
+
         fetch(`/Items/${Item.id}`, {
             method: 'PUT',
             body: JSON.stringify({
-                name: Item.name,
+                name: changedItem, //Item.name
                 completed: !Item.completed,
             }),
             headers: { 'Content-Type': 'application/json' },
@@ -191,7 +194,14 @@ function ItemDisplay({ Item, Role, onItemUpdate, onItemRemoval }) {
                     </Button>
                 </Col>
                 <Col xs={10} className="name">
-                    {Item.name}
+                    <Form.Control
+                    name={Item.id}
+                    value={changedItem}
+                    onChange={ e => setChangedItem(e.target.value) }
+                    type="text"
+                    placeholder="Item Name"
+                    aria-describedby="basic-addon1"
+                    />
                 </Col>            
                 <Col xs={1} className="text-center remove">
                 {Role === 'admin' && (<Button
