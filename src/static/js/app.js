@@ -27,7 +27,7 @@ function TodoListCard() {
             .then(r => {
                 if(r.ok) {
                     var data = r.json();
-                    console.log(data);
+                    //console.log(data);
                     return data;
                 }
             }).then(setNewSession)
@@ -146,12 +146,13 @@ function AddItemForm({ onNewItem }) {
 }
 
 function ItemDisplay({ Item, Role, onItemUpdate, onItemRemoval }) {
-    const { Container, Row, Col, Button, Form } = ReactBootstrap;
+    const { Container, Row, Col, Button, InputGroup, Form } = ReactBootstrap;
 
-    var [changedItem, setChangedItem] = React.useState(Item.name);
+    const [changedItem, setChangedItem] = React.useState(Item.name);
+    const [submitting, setSubmitting] = React.useState(false);
 
     const toggleCompletion = () => {
-
+        setSubmitting(true);
         fetch(`/Items/${Item.id}`, {
             method: 'PUT',
             body: JSON.stringify({
@@ -161,7 +162,23 @@ function ItemDisplay({ Item, Role, onItemUpdate, onItemRemoval }) {
             headers: { 'Content-Type': 'application/json' },
         })
             .then(r => r.json())
-            .then(onItemUpdate);
+            .then(item => { setSubmitting(false); onItemUpdate(item); });
+    };
+
+    const updateItemName = e => {
+        e.preventDefault();
+        setSubmitting(true);
+        fetch(`/Items/name/${Item.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({name: changedItem}),
+            headers: { 'Content-Type': 'application/json' },
+        })
+            .then(r => r.json())
+            .then(Item => {
+                onItemUpdate(Item);
+                setSubmitting(false);
+                setChangedItem(Item.name);
+            });
     };
 
     const removeItem = () => {
@@ -194,15 +211,29 @@ function ItemDisplay({ Item, Role, onItemUpdate, onItemRemoval }) {
                     </Button>
                 </Col>
                 <Col xs={10} className="name">
-                    <Form.Control
-                    name={Item.id}
-                    value={changedItem}
-                    onChange={ e => setChangedItem(e.target.value) }
-                    type="text"
-                    placeholder="Item Name"
-                    aria-describedby="basic-addon1"
-                    />
-                </Col>            
+                    <Form onSubmit={updateItemName}>
+                        <InputGroup className="mb-3">
+                            <Form.Control
+                            name={Item.id}
+                            value={changedItem}
+                            onChange={ e => setChangedItem(e.target.value) }
+                            type="text"
+                            placeholder="Item Name"
+                            aria-describedby="basic-addon1"
+                            />
+                            <InputGroup.Append>
+                                <Button
+                                    type="submit"
+                                    variant="info"
+                                    disabled={!changedItem.length || changedItem == Item.name }
+                                    className={submitting ? 'disabled' : ''}
+                                >
+                                    {submitting ? 'Saving...' : 'Update'}
+                                </Button>
+                            </InputGroup.Append>
+                        </InputGroup>
+                    </Form>
+                </Col>
                 <Col xs={1} className="text-center remove">
                 {Role === 'admin' && (<Button
                         size="sm"

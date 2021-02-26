@@ -4,6 +4,7 @@ const db = require('./persistence');
 const getItems = require('./routes/getItems');
 const addItem = require('./routes/addItem');
 const updateItem = require('./routes/updateItem');
+const updateItemName = require('./routes/updateItemName');
 const deleteItem = require('./routes/deleteItem');
 
 const getAnswers = require('./routes/getAnswers');
@@ -83,6 +84,7 @@ app.get('/logout', (req, res) => {
 app.get('/Items', sessionChecker, getItems);
 app.post('/Items', sessionCheckerAdmin, addItem);
 app.put('/Items/:id', sessionCheckerAdmin, updateItem);
+app.put('/Items/name/:id', sessionCheckerAdmin, updateItemName);
 app.delete('/Items/:id', sessionCheckerAdmin, deleteItem);
 
 app.get('/answers', sessionChecker, getAnswers);
