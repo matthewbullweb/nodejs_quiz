@@ -36,8 +36,6 @@ async function init() {
             'CREATE TABLE IF NOT EXISTS todo_items (id varchar(36), name varchar(255), completed boolean)',
             err => {
                 if (err) return rej(err);
-
-                console.log(`Connected to mysql db at host ${HOST}`);
                 console.log(`Table todo_items created`);
                 acc();
             },
@@ -47,8 +45,8 @@ async function init() {
             'CREATE TABLE IF NOT EXISTS answers (id bigint(20) NOT NULL AUTO_INCREMENT,qid varchar(36) DEFAULT NULL,value varchar(255) DEFAULT NULL,KEY answers_id_IDX (id) USING BTREE)',
             err => {
                 if (err) return rej(err);
-
                 console.log(`Table answers created`);
+                console.log(`Connected to mysql db at host ${HOST}`);
                 acc();
             },
         );

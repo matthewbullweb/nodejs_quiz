@@ -210,6 +210,7 @@ function ItemDisplay({ Item, Role, onItemUpdate, onItemRemoval }) {
                         />
                     </Button>
                 </Col>
+                {Role === 'admin' && (
                 <Col xs={10} className="name">
                     <Form onSubmit={updateItemName}>
                         <InputGroup className="mb-3">
@@ -234,6 +235,12 @@ function ItemDisplay({ Item, Role, onItemUpdate, onItemRemoval }) {
                         </InputGroup>
                     </Form>
                 </Col>
+                )}
+                {Role === 'user' && (
+                <Col xs={10} className="name">            
+                    {Item.name}
+                </Col>
+                )}
                 <Col xs={1} className="text-center remove">
                 {Role === 'admin' && (<Button
                         size="sm"
@@ -368,7 +375,7 @@ function AddAnswerForm(data,{ onNewAnswer }) {
 }
 
 function AnswerDisplay({ answer, Role, onAnswerRemoval }) {
-    const { Container, Row, Col, Button } = ReactBootstrap;
+    const { Container, Row, Col, Button, ToggleButton, ButtonGroup } = ReactBootstrap;
 
     const removeAnswer = () => {
         fetch(`/answers/${answer.id}`, { method: 'DELETE' }).then(() =>
