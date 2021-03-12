@@ -11,6 +11,8 @@ const getAnswers = require('./routes/getAnswers');
 const getAnswer = require('./routes/getAnswer');
 const addAnswer = require('./routes/addAnswer');
 const deleteAnswer = require('./routes/deleteAnswer');
+const addResponse = require('./routes/addResponse');
+const getResponse = require('./routes/getResponse');
 
 var cookieParser = require('cookie-parser');
 const session = require('express-session');
@@ -21,9 +23,9 @@ app.use(session({
     secret: 'somerandonstuffs',
     resave: false,
     saveUninitialized: false,
-    cookie: {
+    /*cookie: {
         expires: 600000
-    }
+    }*/
 }));
 
 var sessionChecker = (req, res, next) => {
@@ -91,6 +93,9 @@ app.get('/answers', sessionChecker, getAnswers);
 app.get('/answers/:qid', sessionChecker, getAnswer);
 app.post('/answers', sessionCheckerAdmin, addAnswer);
 app.delete('/answers/:id', sessionCheckerAdmin, deleteAnswer);
+
+app.post('/response', addResponse);
+app.get('/response/:qid/:uid', getResponse);
 
 db.init().then(() => {
     app.listen(3000, () => console.log('Listening on port 3000'));

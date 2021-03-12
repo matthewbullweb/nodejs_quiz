@@ -21,7 +21,7 @@ async function init() {
     const password = PASSWORD_FILE ? fs.readFileSync(PASSWORD_FILE) : PASSWORD;
     const database = DB_FILE ? fs.readFileSync(DB_FILE) : DB;
 
-    await waitPort({ host, port : 3307, timeout: 15000 });
+    await waitPort({ host, port : 3306, timeout: 15000 });
 
     pool = mysql.createPool({
         connectionLimit: 5,
@@ -46,6 +46,15 @@ async function init() {
             err => {
                 if (err) return rej(err);
                 console.log(`Table answers created`);
+                acc();
+            },
+        );
+
+        pool.query(
+            'CREATE TABLE IF NOT EXISTS responses (id bigint(20) NOT NULL AUTO_INCREMENT,qid varchar(36) DEFAULT NULL,uid bigint(20) DEFAULT NULL,aid bigint(20) DEFAULT NULL,KEY responses_id_IDX (id) USING BTREE)',
+            err => {
+                if (err) return rej(err);
+                console.log(`Table responses created`);
                 console.log(`Connected to mysql db at host ${HOST}`);
                 acc();
             },
@@ -174,7 +183,7 @@ async function storeAnswer(answer) {
             [answer.qid, answer.value],
             function(err, result, fields){
                 if (err) return rej(err);
-                console.log('msql: ' + result.insertId);
+                console.log('Answer Insert ID: ' + result.insertId);
                 acc(result.insertId);
             }
         );
@@ -186,6 +195,55 @@ async function removeAnswer(id) {
         pool.query('DELETE FROM answers WHERE id = ?', [id], err => {
             if (err) return rej(err);
             acc();
+        });
+    });
+}
+
+async function storeResponse(response) {
+    console.log(response);
+
+    //check if exist
+
+    /*return new Promise((acc, rej) => {
+        pool.query(
+            'SELECT * FROM responses (qid, uid, aid) VALUES (?,?,?)',
+            [response.qid,response.uid,response.aid],
+            function(err, result, fields){
+                if (err) return rej(err);
+                console.log(result);
+                acc(result);
+            }
+        );
+    });
+
+    console.log(exist);*/
+
+    //update existing
+
+
+    //insert new row
+    return new Promise((acc, rej) => {
+        pool.query(
+            'INSERT INTO responses (qid, uid, aid) VALUES (?,?,?)',
+            [response.qid,response.uid,response.aid],
+            function(err, result, fields){
+                if (err) return rej(err);
+                console.log('Response Insert ID:' + result.insertId);
+                acc(result.insertId);
+            }
+        );
+    });
+}
+
+async function getResponse(qid,uid) {
+    return new Promise((acc, rej) => {
+        pool.query('SELECT * FROM responses WHERE qid=? AND uid=?', [qid,uid], (err, rows) => {
+            if (err) return rej(err);
+            acc(
+                rows.map(response =>
+                    Object.assign({}, response, {}),
+                ),
+            );
         });
     });
 }
@@ -203,4 +261,6 @@ module.exports = {
     getAnswer,
     storeAnswer,
     removeAnswer,
+    storeResponse,
+    getResponse,
 };

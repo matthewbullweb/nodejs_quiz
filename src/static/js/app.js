@@ -6,7 +6,7 @@ function App() {
                 <Col md={{ offset: 3, span: 6 }}>
                     <TodoListCard />
                 </Col>
-            </Row>  
+            </Row>
         </Container>
     );
 }
@@ -74,7 +74,7 @@ function TodoListCard() {
             {Items.map(Item => (
                 <ItemDisplay
                     Item={Item}
-                    Role={newSession.role}
+                    User={newSession}
                     key={Item.id}
                     onItemUpdate={onItemUpdate}
                     onItemRemoval={onItemRemoval}
@@ -145,7 +145,7 @@ function AddItemForm({ onNewItem }) {
     );
 }
 
-function ItemDisplay({ Item, Role, onItemUpdate, onItemRemoval }) {
+function ItemDisplay({ Item, User, onItemUpdate, onItemRemoval }) {
     const { Container, Row, Col, Button, InputGroup, Form } = ReactBootstrap;
 
     const [changedItem, setChangedItem] = React.useState(Item.name);
@@ -210,7 +210,7 @@ function ItemDisplay({ Item, Role, onItemUpdate, onItemRemoval }) {
                         />
                     </Button>
                 </Col>
-                {Role === 'admin' && (
+                {User.role === 'admin' && (
                 <Col xs={10} className="name">
                     <Form onSubmit={updateItemName}>
                         <InputGroup className="mb-3">
@@ -236,13 +236,13 @@ function ItemDisplay({ Item, Role, onItemUpdate, onItemRemoval }) {
                     </Form>
                 </Col>
                 )}
-                {Role === 'user' && (
+                {User.role === 'user' && (
                 <Col xs={10} className="name">            
                     {Item.name}
                 </Col>
                 )}
                 <Col xs={1} className="text-center remove">
-                {Role === 'admin' && (<Button
+                {User.role === 'admin' && (<Button
                         size="sm"
                         variant="link"
                         onClick={removeItem}
@@ -254,7 +254,7 @@ function ItemDisplay({ Item, Role, onItemUpdate, onItemRemoval }) {
             </Row>
             <Row>
                 <Col xs={12}>
-                    <AnswerListCard item={Item} role={Role} />
+                    <AnswerListCard item={Item} user={User} />
                 </Col>
             </Row>
         </Container>
@@ -305,18 +305,24 @@ function AnswerListCard(data) {
 
     if (answers != undefined) return (
         <React.Fragment>
-            {data.role === 'admin' && (<AddAnswerForm item={data.item.id} onNewAnswer={ onNewAnswer } />)}
+            {data.user.role === 'admin' && (<AddAnswerForm item={data.item.id} onNewAnswer={ onNewAnswer } />)}
             {answers.length === 0 && (
                 <p className="text-center">You have no answers yet!</p>
             )}
-            {answers.map(answer => (
+            {data.user.role === 'admin' && ( answers.map(answer => (
                 <AnswerDisplay
                     answer={answer}
-                    Role={data.role}
+                    User={data.user}
                     key={answer.id}
                     onAnswerRemoval={onAnswerRemoval}
                 />
-            ))}
+            )))}
+            {data.user.role === 'user' && (
+                <ToggleDisplay
+                    qid={data.item.id}
+                    uid={data.user.id}
+                    radios={answers}
+                />)}
         </React.Fragment>
     );
     else return (
@@ -374,8 +380,8 @@ function AddAnswerForm(data,{ onNewAnswer }) {
     );
 }
 
-function AnswerDisplay({ answer, Role, onAnswerRemoval }) {
-    const { Container, Row, Col, Button, ToggleButton, ButtonGroup } = ReactBootstrap;
+function AnswerDisplay({ answer, User, onAnswerRemoval }) {
+    const { Container, Row, Col, Button } = ReactBootstrap;
 
     const removeAnswer = () => {
         fetch(`/answers/${answer.id}`, { method: 'DELETE' }).then(() =>
@@ -393,7 +399,7 @@ function AnswerDisplay({ answer, Role, onAnswerRemoval }) {
                     {answer.value}
                 </Col>
                 <Col xs={1} className="text-center remove">
-                {Role === 'admin' && (<Button
+                {User.role === 'admin' && (<Button
                         size="sm"
                         variant="link"
                         onClick={removeAnswer}
@@ -405,6 +411,78 @@ function AnswerDisplay({ answer, Role, onAnswerRemoval }) {
             </Row>
         </Container>
     );
+}
+
+function ToggleDisplay(data,{radios}) {
+
+  const { Container, ToggleButton, ButtonGroup, Form, InputGroup, Button } = ReactBootstrap;
+
+  //poss to set value from db here
+  const [radioValue, setRadioValue] = React.useState(null);
+  
+  const submitResponse = e => {
+    
+    e.preventDefault();
+    setRadioValue(e.currentTarget.value); //initally appears undefined
+
+    fetch('/response', {
+        method: 'POST',
+        body: JSON.stringify({ qid: data.qid, uid: parseInt(data.uid), aid: parseInt(radioValue) }),
+        headers: { 'Content-Type': 'application/json' },
+    })
+        .then(r => r.json())
+        .then(response => {
+            console.log(response);
+            //reset value
+            setRadioValue(response.aid);
+        });
+    };
+
+    //loads response from database and sets it
+    React.useEffect(() => {
+        fetch(`/response/${data.qid}/${data.uid}`, {method: 'GET'})
+            .then(r => {
+                var data = r.json();
+                //console.log(data);
+                return data;
+            })
+            .then(r => { if(r.length) { console.log(r[0]); setRadioValue(r[0].aid); } } );
+    }, []);
+
+  return (
+    <Container>
+      <Form onSubmit={submitResponse}>
+        <InputGroup className="mb-3">
+
+            <ButtonGroup toggle>
+                {data.radios.map((radio, idx) => (
+                <ToggleButton
+                    key={idx}
+                    type="radio"
+                    variant="secondary"
+                    name="radio"
+                    value={radio.id}
+                    checked={radioValue == radio.id}
+                    onChange={(e) => setRadioValue(e.target.value) }
+                >
+                    {radio.value}
+                </ToggleButton>
+                ))}
+            </ButtonGroup>
+
+            <InputGroup.Append>
+                <Button
+                    type="submit"
+                    variant="info"
+                ><i class="far fa-save"></i>
+                </Button>
+            </InputGroup.Append>
+
+            </InputGroup>
+        </Form>
+
+    </Container>
+  );
 }
 
 ReactDOM.render(<App />, document.getElementById('root'));
